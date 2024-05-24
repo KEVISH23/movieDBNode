@@ -1,0 +1,5 @@
+{
+    "dbUrl":"mongodb+srv://kevishshaligram:6c4N5WasDRzZ9dMG@cluster0.ro8j6zq.mongodb.net/localDB?retryWrites=true&w=majority&appName=Cluster0",
+    "port":3000,
+    "SECRET_KEY":"LicZindagiKeSaathBhiZindagiKBaadBhi"
+}

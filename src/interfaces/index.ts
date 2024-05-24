@@ -1,0 +1,6 @@
+export * from './IUser'
+export * from './movies.interface'
+export * from './genre.interface'
+export * from './boc.interface'
+export * from './review.interface'
+export * from './requestQuery.interface'
