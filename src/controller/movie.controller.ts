@@ -1,16 +1,26 @@
 import { NextFunction, Request, Response} from "express";
 import { controller,request,response,httpPost,httpGet } from "inversify-express-utils";
-import { MovieService, UserService } from "../service";
+import { MovieService } from "../service";
 import { responseMessage, TYPES } from "../constants";
 import { inject } from "inversify";
 import {  IBOC, IMOVIES, REQUSER } from "../interfaces";
 import { compareRole, errorHandler } from "../utils";
-import { PipelineStage } from "mongoose";
-
+import puppeteer,{Browser} from "puppeteer";
 
 // @controller('/movies',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
 //     compareRole(req.user,"Admin",res,next)
 // })
+
+let browser: Browser | null = null;
+async function getBrowserInstance(): Promise<Browser> {
+    if (!browser) {
+        browser = await puppeteer.launch({
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            headless: true,
+        });
+    }
+    return browser;
+}
 @controller('/movies')
 export class MovieController{
 
@@ -33,7 +43,7 @@ export class MovieController{
                 genre:genre?.toString()
             })
             res.json({status:true,data})
-        }catch(err){
+        }catch(err){ 
             const message:string = errorHandler(err)
             res.json({status:false,message})
         }
@@ -89,4 +99,77 @@ export class MovieController{
             res.json({status:false,message})
         }
      }
+     @httpGet('/getPdf')
+     async getPdf(@request() req: REQUSER, @response() res: Response): Promise<void> {
+        let page = null
+        try {
+            const htmlString = `<table border="1">
+                <thead>
+                    <tr>
+                        <th>Column 1</th>
+                        <th>Column 2</th>
+                        <th>Column 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Row 1, Cell 1</td>
+                        <td>Row 1, Cell 2</td>
+                        <td>Row 1, Cell 3</td>
+                    </tr>
+                    <tr>
+                        <td>Row 2, Cell 1</td>
+                        <td>Row 2, Cell 2</td>
+                        <td>Row 2, Cell 3</td>
+                    </tr>
+                    <tr>
+                        <td>Row 3, Cell 1</td>
+                        <td>Row 3, Cell 2</td>
+                        <td>Row 3, Cell 3</td>
+                    </tr>
+                </tbody>
+            </table>`;
+    
+            browser = await getBrowserInstance();
+            page = await browser.newPage();
+    
+            await page.setContent(htmlString);
+    
+            await page.emulateMediaType('screen');
+    
+            const pdf = await page.pdf({
+                path: 'result.pdf',
+                margin: { top: '100px', right: '50px', bottom: '100px', left: '50px' },
+                printBackground: true,
+                format: 'A4',
+            });
+
+    
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'attachment; filename="example.pdf"');
+            
+            res.send(pdf);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            // Handle error response
+            res.status(500).send('Error generating PDF');
+        }finally{
+            if (page) {
+                await page.close();
+            }
+        }
+        process.on('exit',async () => {
+            if (browser) {
+                await browser.close();
+            }
+        });
+
+        // const pdfBuffer  = await generatePdf("<h1>helloworld</h1>")
+        // res.setHeader('Content-Type', 'application/pdf');
+        // res.setHeader('Content-Disposition', 'inline; filename=generated.pdf');
+        // res.send(pdfBuffer);
+    }
+
+    
+    
 }

@@ -25,10 +25,10 @@ export class GenreController{
             await this.genreService.addGenreService({genreName})
             res.json({status:true,message:responseMessage.GENRECREATED})
         } catch (error) {
-            console.log(error)
+            // console.log(error)
             const message:string = errorHandler(error)
             res.json({status:false,message})
         }
-
+        
     }
 }

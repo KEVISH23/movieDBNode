@@ -5,6 +5,7 @@ export const responseMessage = {
     GENRECREATED:"Genre Created",
     MOVIECREATED:"Movie Created",
     COLLECTADDED:"Box office collectin added",
+    REVIEWADD:"Review Added",
     //error messages
     NOTREGISTERED:"User not registered",
     INVALID_CREDENTIALS:"Invalid credentials",

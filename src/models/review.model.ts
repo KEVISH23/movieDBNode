@@ -9,6 +9,12 @@ const ReviewSchema = new mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         required:[true,'Movie is required'],
         ref:"Movie"
+    },
+    ratings:{
+        type:Number,
+        required:[true,"Rating is required"],
+        min:[0,"Minimum 0"],
+        max:[5,"Maximum 5"]
     }
 })
 

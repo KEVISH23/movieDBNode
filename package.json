@@ -17,6 +17,7 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mongoose": "^5.11.97",
+    "@types/puppeteer": "^7.0.4",
     "bcrypt": "^5.1.1",
     "config": "^3.3.11",
     "cors": "^2.8.5",
@@ -27,6 +28,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.0",
     "nodemon": "^3.1.0",
+    "pdf-puppeteer": "^1.1.11",
+    "puppeteer": "^22.10.0",
     "reflect-metadata": "^0.2.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"

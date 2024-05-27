@@ -151,7 +151,7 @@ export class MovieService {
         $match:{}
       }
 
-      console.log(reqUser)
+      // console.log(reqUser)
       const roleWiseMatch = {
         ...(reqUser.role === "Actor"
           ? { "cast._id": new mongoose.Types.ObjectId(reqUser._id) }
@@ -244,8 +244,9 @@ export class MovieService {
             _id:1,
             budget:1,
             boxOfficecollection:1,
-            genre:1,
-            recovered:1
+            genreName:1,
+            recovered:1,
+            verdict:1
           }
         }
       ];

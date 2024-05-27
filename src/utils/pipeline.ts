@@ -105,18 +105,33 @@ export const getMoviesPipeline:PipelineStage[] = [
           producerName:"$producer.name",
           budget:{$arrayElemAt:["$result.budget",0]},
           movieName:{$arrayElemAt:["$result.movieName",0]},
-          genre:"$genre.genreName",
-          recovered:{$multiply:[{$divide:[{$abs:{$subtract:[{$arrayElemAt:["$result.budget",0]},"$boxOfficecollection"]}},{$arrayElemAt:["$result.budget",0]}]},100]}
+          genreName:"$genre.genreName",
+          recovered:{$multiply:[{$divide:[{
+            
+              $subtract:[
+                "$boxOfficecollection",
+                {$arrayElemAt:["$result.budget",0]},
+              ]
+            
+          },
+          {$arrayElemAt:["$result.budget",0]}]},100]}
         }
-      },{
-        $addFields: {
-          recovered: {
-            $cond:[
-              { $gte: [ "$boxOfficecollection", "$budget" ] }
-              ,
-              {$concat:["+",{$toString:"$recovered"},"%"]},{$concat:["-",{$toString:"$recovered"},"%"]}]}
-        }
-      }
+      },
+ {
+   $addFields: {
+     verdict: {
+       $switch:{
+         branches:[
+            { case: { $lte: ["$recovered", 0] }, then: "Flop" },
+            { case: { $lte: ["$recovered", 20] }, then: "Average" },
+            { case: { $lte: ["$recovered", 50] }, then: "Hit" },
+            { case: { $lte: ["$recovered", 100] }, then: "Super Hit" },
+         ],
+         default:"BlockBuster"
+       }
+     }
+   }
+ }
   ]
 
 
@@ -228,18 +243,32 @@ export const getMoviesPipeline:PipelineStage[] = [
           budget:{$arrayElemAt:["$result.budget",0]},
           movieName:{$arrayElemAt:["$result.movieName",0]},
           genreName:"$genre.genreName",
-          recovered:{$multiply:[{$divide:[{$abs:{$subtract:[{$arrayElemAt:["$result.budget",0]},"$boxOfficecollection"]}},{$arrayElemAt:["$result.budget",0]}]},100]}
+          recovered:{$multiply:[{$divide:[{
+            
+              $subtract:[
+                "$boxOfficecollection",
+                {$arrayElemAt:["$result.budget",0]},
+              ]
+            
+          },
+          {$arrayElemAt:["$result.budget",0]}]},100]}
         }
-      }
-    ,{
-      $addFields: {
-        recovered: {
-          $cond:[
-            { $gte: [ "$boxOfficecollection", "$budget" ] }
-            ,
-            {$concat:["+",{$toString:"$recovered"},"%"]},{$concat:["-",{$toString:"$recovered"},"%"]}]}
-      }
-    }
+      },
+ {
+   $addFields: {
+     verdict: {
+       $switch:{
+         branches:[
+            { case: { $lte: ["$recovered", 0] }, then: "Flop" },
+            { case: { $lte: ["$recovered", 20] }, then: "Average" },
+            { case: { $lte: ["$recovered", 50] }, then: "Hit" },
+            { case: { $lte: ["$recovered", 100] }, then: "Super Hit" },
+         ],
+         default:"BlockBuster"
+       }
+     }
+   }
+ }
     // ,{
       //         $project:{
       //           directorName:1,
@@ -253,3 +282,78 @@ export const getMoviesPipeline:PipelineStage[] = [
       //         }
       //       }
   ]
+
+
+export const reviewPipeline:PipelineStage[] = [
+  {
+    $lookup: {
+      from: "users",
+      localField: "reviewer",
+      foreignField: "_id",
+      as: "user"
+    }
+  }
+  ,{
+    $lookup: {
+      from: "movies",
+      localField: "movieId",
+      foreignField: "_id",
+      as: "movie"
+    }
+  }
+  ,{
+    $group: {
+      _id: "$movieId",
+      avgRating: {
+        $avg:"$ratings"
+      },
+      movieName:{$first:"$movie.movieName"},
+      cast:{$first:"$movie.cast"},
+      director:{$first:"$movie.director"},
+      producer:{$first:"$movie.producer"},
+      reviewId:{$first:"$_id"},
+      reviewer:{$push:"$user.name"}
+    }
+  }
+  ,{
+    $lookup: {
+      from: "users",
+      localField: "director",
+      foreignField: "_id",
+      as: "director"
+    }
+  }
+  ,{
+   $unwind:"$producer" 
+  }
+  ,{
+    $lookup: {
+      from: "users",
+      localField: "producer",
+      foreignField: "_id",
+      as: "producer"
+    }
+  }
+  ,{
+   $unwind:"$cast" 
+  }
+  ,{
+    $lookup: {
+      from: "users",
+      localField: "cast",
+      foreignField: "_id",
+      as: "cast"
+    }
+  }
+  ,{
+    $project: {
+      cast:"$cast.name",
+      producer:"$producer.name",
+      director:"$director.name",
+      movieName:1,
+      avgRating:1,
+      reviewer:1,
+      reviewId:1
+    }
+  }
+]
