@@ -11,16 +11,7 @@ import puppeteer,{Browser} from "puppeteer";
 //     compareRole(req.user,"Admin",res,next)
 // })
 
-let browser: Browser | null = null;
-async function getBrowserInstance(): Promise<Browser> {
-    if (!browser) {
-        browser = await puppeteer.launch({
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-            headless: true,
-        });
-    }
-    return browser;
-}
+
 @controller('/movies')
 export class MovieController{
 
@@ -101,9 +92,9 @@ export class MovieController{
      }
      @httpGet('/getPdf')
      async getPdf(@request() req: REQUSER, @response() res: Response): Promise<void> {
-        let page = null
+        
         try {
-            const htmlString = `<table border="1">
+            const htmlString = `<table>
                 <thead>
                     <tr>
                         <th>Column 1</th>
@@ -130,12 +121,19 @@ export class MovieController{
                 </tbody>
             </table>`;
     
-            browser = await getBrowserInstance();
-            page = await browser.newPage();
+            const browser = await puppeteer.launch(
+                {
+                  headless: true,
+                //   slowMo: 50,
+                  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+                //   timeout: 60000,
+              }
+              );
+            let page = await browser.newPage();
     
             await page.setContent(htmlString);
     
-            await page.emulateMediaType('screen');
+            // await page.emulateMediaType('screen');
     
             const pdf = await page.pdf({
                 path: 'result.pdf',
@@ -145,24 +143,15 @@ export class MovieController{
             });
 
     
+            await browser.close()
             res.setHeader('Content-Type', 'application/pdf');
             res.setHeader('Content-Disposition', 'attachment; filename="example.pdf"');
-            
             res.send(pdf);
         } catch (error) {
             console.error('Error generating PDF:', error);
             // Handle error response
             res.status(500).send('Error generating PDF');
-        }finally{
-            if (page) {
-                await page.close();
-            }
         }
-        process.on('exit',async () => {
-            if (browser) {
-                await browser.close();
-            }
-        });
 
         // const pdfBuffer  = await generatePdf("<h1>helloworld</h1>")
         // res.setHeader('Content-Type', 'application/pdf');

@@ -132,7 +132,7 @@ export const getMoviesPipeline:PipelineStage[] = [
      }
    }
  }
-  ]
+]
 
 
   const dafodPipeline:PipelineStage[] = [
@@ -196,7 +196,7 @@ export const getMoviesPipeline:PipelineStage[] = [
       //           boxOfficecollection:1
       //         }
       //       }
-  ]
+]
 
   const okaayWithPercentage:PipelineStage[] = [
     {
@@ -281,7 +281,7 @@ export const getMoviesPipeline:PipelineStage[] = [
       //           boxOfficecollection:1
       //         }
       //       }
-  ]
+]
 
 
 export const reviewPipeline:PipelineStage[] = [
