@@ -5,7 +5,13 @@ import { responseMessage, TYPES } from "../constants";
 import { inject } from "inversify";
 import { IUSER, REQUSER } from "../interfaces";
 import { errorHandler } from "../utils";
+import { User } from "../models";
+import { MongoClient } from "mongodb";
 
+
+const client = new MongoClient('mongodb+srv://kevishshaligram:6c4N5WasDRzZ9dMG@cluster0.ro8j6zq.mongodb.net/localDB?retryWrites=true&w=majority&appName=Cluster0')
+
+const session = client.startSession()
 @controller('/users')
 export class UserController{
     constructor(
@@ -54,6 +60,40 @@ export class UserController{
             await this.userService.logoutService(_id)
             res.json({status:true,message:responseMessage.LOGGEDOUT})
         }catch(err:any){
+            const message:string = errorHandler(err)
+            res.json({status:false,message})
+        }
+    }
+
+    @httpPost('/bulkwrite')
+    async bulkwrite(@request() req:REQUSER,@response() res:Response):Promise<void>{
+        try{
+            const transaction = session.startTransaction()
+            await User.bulkWrite([
+                {insertOne:{
+                    document:{
+                        password:"1234",
+                        dob:"1987-11-23",
+                        role:"Actor",
+                        gender:"Female",
+                        name:"Katrina kaif",
+                        email:"katrinakaif1@gmail.com",
+                    }
+                }},
+                {insertOne:{
+                    document:{
+                        password:"1234",
+                        dob:"1987-11-23",
+                        role:"Actor",
+                        gender:"Female",
+                        name:"Katrina kaif",
+                        email:"katrinakaif1@gmail.com",
+                    }
+                }}
+            ])
+            await transaction.commitTransaction()
+        }catch(err:any){
+            await transaction.abortTransaction()
             const message:string = errorHandler(err)
             res.json({status:false,message})
         }
