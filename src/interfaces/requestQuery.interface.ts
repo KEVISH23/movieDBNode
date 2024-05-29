@@ -10,5 +10,18 @@ export interface IGETMOVIES{
 }
 
 export interface IGETCOLLECTION extends IGETMOVIES{
-    collectionRange:string|undefined
+    collectionRange:string|undefined,
+}
+
+export interface IGETCOLLECTIONDATA {
+    _id:string,
+    boxOfficecollection:number,
+    directorName:string[],
+    actorName:string[],
+    producerName:string[],
+    budget:number,
+    movieName:string,
+    genreName:string[],
+    recovered:number,
+    verdict:string
 }

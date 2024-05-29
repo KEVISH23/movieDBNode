@@ -1,9 +1,25 @@
 import { injectable } from "inversify";
-import { DECODED, IBOC, IGETCOLLECTION, IGETMOVIES, IMOVIES, IUSER, REQUSER } from "../interfaces";
+import {
+  DECODED,
+  IBOC,
+  IGETCOLLECTION,
+  IGETCOLLECTIONDATA,
+  IGETMOVIES,
+  IMOVIES,
+  IUSER,
+  REQUSER,
+} from "../interfaces";
 import { BoxOffice, Movie } from "../models";
 import { responseMessage } from "../constants";
-import { getCollectionPipeline, getMoviesPipeline } from "../utils";
+import {
+  getAndQuery,
+  getCollectionPipeline,
+  getMoviesPipeline,
+  getOrQuery,
+  roleBased,
+} from "../utils";
 import mongoose, { PipelineStage } from "mongoose";
+import puppeteer from "puppeteer";
 @injectable()
 export class MovieService {
   async getMovies(reqUser: DECODED, reqQuery: IGETMOVIES): Promise<IMOVIES[]> {
@@ -15,25 +31,16 @@ export class MovieService {
         releaseDateRange,
         budgetRange,
         search,
-        genre
+        genre,
       } = reqQuery;
       let query = {
-        $match:{}
-      }
-      const roleWiseMatch = {
-        ...(reqUser.role === "Actor"
-          ? { cast: new mongoose.Types.ObjectId(reqUser._id) }
-          : {}),
-        ...(reqUser.role === "Producer"
-          ? { producer: new mongoose.Types.ObjectId(reqUser._id) }
-          : {}),
-        ...(reqUser.role === "Director"
-          ? { director: new mongoose.Types.ObjectId(reqUser._id) }
-          : {}),
+        $match: {},
       };
+      const roleWiseMatch = roleBased(reqUser);
 
-      const releaseDateRangeArr: string[] | undefined = releaseDateRange?.split("/");
-      const budgetRangeArr:String[]|undefined = budgetRange?.split("-")
+      const releaseDateRangeArr: string[] | undefined =
+        releaseDateRange?.split("/");
+      const budgetRangeArr: String[] | undefined = budgetRange?.split("-");
 
       const filteredArray = [
         ...(actorName ? [{ actorName }] : []),
@@ -65,19 +72,18 @@ export class MovieService {
             : [{ budget: { $gte: budgetRangeArr[0] } }]
           : []),
       ];
-      filteredArray.length>0 ? query.$match = {
-        ...query.$match,
-        $and: [
-            ...filteredArray
-        ],
-      }:null
+      filteredArray.length > 0
+        ? (query.$match = getAndQuery(filteredArray, query))
+        : null;
 
-     search ? query.$match = {
-        ...query.$match,
-        $or: ["actorName","producerName","directorName","movieName","genre"].map(ele=>{
-            return {[ele]:{$regex:search,$options:'i'}}
-          })
-      }:null
+      search
+        ? (query.$match = getOrQuery(
+            ["actorName", "producerName", "directorName", "movieName", "genre"],
+            query,
+            search
+          ))
+        : null;
+
       const pipeline: PipelineStage[] = [
         {
           $match: {
@@ -86,24 +92,25 @@ export class MovieService {
         },
         ...getMoviesPipeline,
         {
-            $match:{
-                ...query.$match
-            }
-        },{
-            $project:{
-              directorName:1,
-              actorName:1,
-              producerName:1,
-              movieName:1,
-              releaseDate:1,
-              _id:1,
-              budget:1,
-              genre:1
-            }
-          }
+          $match: {
+            ...query.$match,
+          },
+        },
+        {
+          $project: {
+            directorName: 1,
+            actorName: 1,
+            producerName: 1,
+            movieName: 1,
+            releaseDate: 1,
+            _id: 1,
+            budget: 1,
+            genre: 1,
+          },
+        },
       ];
-    //   console.log(query)
-    //   return pipeline
+      //   console.log(query)
+      //   return pipeline
       return await Movie.aggregate(pipeline);
     } catch (error) {
       throw error;
@@ -127,15 +134,18 @@ export class MovieService {
     }
   }
 
-  async addCollectionService(data:IBOC):Promise<void>{
+  async addCollectionService(data: IBOC): Promise<void> {
     try {
-        await BoxOffice.create(data)
+      await BoxOffice.create(data);
     } catch (error) {
-      throw(error)
+      throw error;
     }
   }
 
-  async getCollection(reqUser: DECODED, reqQuery: IGETCOLLECTION):Promise<IBOC[]>{
+  async getCollection(
+    reqUser: DECODED,
+    reqQuery: IGETCOLLECTION
+  ): Promise<IGETCOLLECTIONDATA[]> {
     try {
       const {
         actorName,
@@ -145,28 +155,20 @@ export class MovieService {
         budgetRange,
         search,
         genre,
-        collectionRange
+        collectionRange,
       } = reqQuery;
       let query = {
-        $match:{}
-      }
-
-      // console.log(reqUser)
-      const roleWiseMatch = {
-        ...(reqUser.role === "Actor"
-          ? { "cast._id": new mongoose.Types.ObjectId(reqUser._id) }
-          : {}),
-        ...(reqUser.role === "Producer"
-          ? { "producer._id": new mongoose.Types.ObjectId(reqUser._id) }
-          : {}),
-        ...(reqUser.role === "Director"
-          ? { "director._id": new mongoose.Types.ObjectId(reqUser._id) }
-          : {}),
+        $match: {},
       };
 
-      const releaseDateRangeArr: string[] | undefined = releaseDateRange?.split("/");
-      const budgetRangeArr:String[]|undefined = budgetRange?.split("-")
-      const collectionRangeArr:String[]|undefined = collectionRange?.split("-")
+      // console.log(reqUser)
+      const roleWiseMatch = roleBased(reqUser, "collection");
+
+      const releaseDateRangeArr: string[] | undefined =
+        releaseDateRange?.split("/");
+      const budgetRangeArr: String[] | undefined = budgetRange?.split("-");
+      const collectionRangeArr: String[] | undefined =
+        collectionRange?.split("-");
 
       const filteredArray = [
         ...(actorName ? [{ actorName }] : []),
@@ -210,19 +212,18 @@ export class MovieService {
             : [{ boxOfficecollection: { $gte: Number(collectionRangeArr[0]) } }]
           : []),
       ];
-      filteredArray.length>0 ? query.$match = {
-        ...query.$match,
-        $and: [
-            ...filteredArray
-        ],
-      }:null
+      filteredArray.length > 0
+        ? (query.$match = getAndQuery(filteredArray, query))
+        : null;
 
-     search ? query.$match = {
-        ...query.$match,
-        $or: ["actorName","producerName","directorName","movieName","genre"].map(ele=>{
-            return {[ele]:{$regex:search,$options:'i'}}
-          })
-      }:null
+      search
+        ? (query.$match = getOrQuery(
+            ["actorName", "producerName", "directorName", "movieName", "genre"],
+            query,
+            search
+          ))
+        : null;
+
       const pipeline: PipelineStage[] = [
         ...getCollectionPipeline,
         {
@@ -231,28 +232,91 @@ export class MovieService {
           },
         },
         {
-            $match:{
-                ...query.$match
-            }
-        },{
-          $project:{
-            directorName:1,
-            actorName:1,
-            producerName:1,
-            movieName:1,
-            releaseDate:1,
-            _id:1,
-            budget:1,
-            boxOfficecollection:1,
-            genreName:1,
-            recovered:1,
-            verdict:1
-          }
-        }
+          $match: {
+            ...query.$match,
+          },
+        },
+        {
+          $project: {
+            directorName: 1,
+            actorName: 1,
+            producerName: 1,
+            movieName: 1,
+            releaseDate: 1,
+            _id: 1,
+            budget: 1,
+            boxOfficecollection: 1,
+            genreName: 1,
+            recovered: 1,
+            verdict: 1,
+          },
+        },
       ];
-      return await BoxOffice.aggregate(pipeline)
+      return await BoxOffice.aggregate(pipeline);
     } catch (error) {
-      throw(error)
+      throw error;
+    }
+  }
+
+  async getPdf(reqUser: DECODED, reqQuery: IGETCOLLECTION): Promise<Buffer> {
+    try {
+      const data: IGETCOLLECTIONDATA[] = await this.getCollection(reqUser,reqQuery);
+      let htmlString = `
+        <h1 style="text-align:center">Collection Details </h1>
+      <table style="border:2px solid black;border-collapse:collapse">
+                <thead>
+                    <tr>
+                        <th style="border:2px solid black">Movie name</th>
+                        <th style="border:2px solid black">Cast</th>
+                        <th style="border:2px solid black">Director</th>
+                        <th style="border:2px solid black">Producer</th>
+                        <th style="border:2px solid black">Budget</th>
+                        <th style="border:2px solid black">Collection</th>
+                        <th style="border:2px solid black">Verdict</th>
+                        </tr>
+                </thead>
+                <tbody>`
+                
+                data.forEach(ele=>
+                  htmlString+= `<tr>
+                    <td style="border:2px solid black">${ele.movieName}</td>
+                    <td style="border:2px solid black">${ele.actorName.join()}</td>
+                    <td style="border:2px solid black">${ele.directorName.join()}</td>
+                    <td style="border:2px solid black">${ele.producerName.join()}</td>
+                    <td style="border:2px solid black">${ele.budget}</td>
+                    <td style="border:2px solid black">${ele.boxOfficecollection}</td>
+                    <td style="border:2px solid black">${ele.verdict}</td>
+                  </tr>
+                  `
+                )
+                
+          htmlString += `   
+                </tbody>
+            </table>`;
+
+      const browser = await puppeteer.launch({
+        headless: true,
+        //   slowMo: 50,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        //   timeout: 60000,
+      });
+      let page = await browser.newPage();
+
+      await page.setContent(htmlString);
+
+      // await page.emulateMediaType('screen');
+
+      const pdf = await page.pdf({
+        path: "result.pdf",
+        margin: { top: "100px", right: "50px", bottom: "100px", left: "50px" },
+        printBackground: true,
+        format: "A4",
+      });
+
+      await browser.close();
+      return pdf;
+    } catch (error) {
+      throw error;
     }
   }
 }

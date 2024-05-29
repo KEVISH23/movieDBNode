@@ -3,7 +3,7 @@ import { controller,request,response,httpPost,httpGet } from "inversify-express-
 import { MovieService } from "../service";
 import { responseMessage, TYPES } from "../constants";
 import { inject } from "inversify";
-import {  IBOC, IMOVIES, REQUSER } from "../interfaces";
+import {  IBOC, IGETCOLLECTIONDATA, IMOVIES, REQUSER } from "../interfaces";
 import { compareRole, errorHandler } from "../utils";
 import puppeteer,{Browser} from "puppeteer";
 
@@ -72,19 +72,36 @@ export class MovieController{
      @httpGet('/getCollection',TYPES.AuthMiddleware)
      async getCollection(@request() req:REQUSER,@response() res:Response):Promise<void>{
         try {    
-                                                                                                                                                                              const {role,_id,email} = req.user
-        const {actorName,directorName,producerName,releaseDateRange,budgetRange,search,genre,collectionRange} = req.query                                                                                                  
-            const data:IBOC[] = await this.movieService.getCollection({role,_id,email},{
-                actorName:actorName?.toString(),
-                directorName:directorName?.toString(),
-                producerName:producerName?.toString(),
-                releaseDateRange:releaseDateRange?.toString(),
-                budgetRange:budgetRange?.toString(),
-                search:search?.toString(),
-                genre:genre?.toString(),
-                collectionRange:collectionRange?.toString()
-            })
-            res.json({status:true,data})
+        const {role,_id,email} = req.user
+        const {actorName,directorName,producerName,releaseDateRange,budgetRange,search,genre,collectionRange,getPdf} = req.query
+        
+            if(getPdf){
+                const pdf:Buffer = await this.movieService.getPdf({role,_id,email},{
+                    actorName:actorName?.toString(),
+                    directorName:directorName?.toString(),
+                    producerName:producerName?.toString(),
+                    releaseDateRange:releaseDateRange?.toString(),
+                    budgetRange:budgetRange?.toString(),
+                    search:search?.toString(),
+                    genre:genre?.toString(),
+                    collectionRange:collectionRange?.toString(),
+                })
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', 'attachment; filename="example.pdf"');
+                res.send(pdf);
+            }else{
+                const data:IGETCOLLECTIONDATA[] = await this.movieService.getCollection({role,_id,email},{
+                    actorName:actorName?.toString(),
+                    directorName:directorName?.toString(),
+                    producerName:producerName?.toString(),
+                    releaseDateRange:releaseDateRange?.toString(),
+                    budgetRange:budgetRange?.toString(),
+                    search:search?.toString(),
+                    genre:genre?.toString(),
+                    collectionRange:collectionRange?.toString(),
+                })
+                res.json({status:true,data})
+            }
         } catch (error:any) {
             const message:string = errorHandler(error)
             res.json({status:false,message})
