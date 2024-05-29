@@ -260,7 +260,10 @@ export class MovieService {
 
   async getPdf(reqUser: DECODED, reqQuery: IGETCOLLECTION): Promise<Buffer> {
     try {
-      const data: IGETCOLLECTIONDATA[] = await this.getCollection(reqUser,reqQuery);
+      const data: IGETCOLLECTIONDATA[] = await this.getCollection(
+        reqUser,
+        reqQuery
+      );
       let htmlString = `
         <h1 style="text-align:center">Collection Details </h1>
       <table style="border:2px solid black;border-collapse:collapse">
@@ -275,22 +278,25 @@ export class MovieService {
                         <th style="border:2px solid black">Verdict</th>
                         </tr>
                 </thead>
-                <tbody>`
-                
-                data.forEach(ele=>
-                  htmlString+= `<tr>
+                <tbody>`;
+
+      data.forEach(
+        (ele) =>
+          (htmlString += `<tr>
                     <td style="border:2px solid black">${ele.movieName}</td>
                     <td style="border:2px solid black">${ele.actorName.join()}</td>
                     <td style="border:2px solid black">${ele.directorName.join()}</td>
                     <td style="border:2px solid black">${ele.producerName.join()}</td>
                     <td style="border:2px solid black">${ele.budget}</td>
-                    <td style="border:2px solid black">${ele.boxOfficecollection}</td>
+                    <td style="border:2px solid black">${
+                      ele.boxOfficecollection
+                    }</td>
                     <td style="border:2px solid black">${ele.verdict}</td>
                   </tr>
-                  `
-                )
-                
-          htmlString += `   
+                  `)
+      );
+
+      htmlString += `   
                 </tbody>
             </table>`;
 
