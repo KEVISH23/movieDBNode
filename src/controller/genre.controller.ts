@@ -9,7 +9,7 @@ import { compareRole, errorHandler } from "../utils";
 
 
 @controller('/admin/genre',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
-    compareRole(req.user,"Admin",res,next)
+    compareRole(req.user,["Admin"],res,next)
 })
 
 export class GenreController{

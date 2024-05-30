@@ -3,8 +3,10 @@ export const errorHandler = (err:any):string => {
     if(err.code === 11000){
         return "Email already registered"
     }
+    if(err.name === 'CastError'){
+        return `provided ID(s) are not valid `
+    }
     if(err.name === 'ValidationError'){
-
         for (const key in err.errors) {
             message += err.errors[key].message
             message += ', '

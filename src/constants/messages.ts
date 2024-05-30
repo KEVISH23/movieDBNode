@@ -11,6 +11,10 @@ export const responseMessage = {
     INVALID_CREDENTIALS:"Invalid credentials",
     ALREADY_LOGGEDIN:"Already Logged In",
     TOKENNOTPROVIDED:"Token Not Provided",
-    TOKENINVALID:"Token provided is not valid"
+    TOKENINVALID:"Token provided is not valid",
+    IDNOTPROVIDED:"Id not provided",
+    IDNOTVALID:"Id provided is not valid!!",
+    MOVIEUPDATEFIELDS:'movieName cast producer director budget genre releaseDate any of the field is necessary',
+    MOVIENOTEXISTS:"Movie does not exists",
 }
 

@@ -7,11 +7,10 @@ import { IUSER, REQUSER } from "../interfaces";
 import { errorHandler } from "../utils";
 import { User } from "../models";
 import { MongoClient } from "mongodb";
+import mongoose from "mongoose";
 
 
-const client = new MongoClient('mongodb+srv://kevishshaligram:6c4N5WasDRzZ9dMG@cluster0.ro8j6zq.mongodb.net/localDB?retryWrites=true&w=majority&appName=Cluster0')
 
-const session = client.startSession()
 @controller('/users')
 export class UserController{
     constructor(
@@ -67,9 +66,16 @@ export class UserController{
 
     @httpPost('/bulkwrite')
     async bulkwrite(@request() req:REQUSER,@response() res:Response):Promise<void>{
+        const session = await mongoose.startSession()
+        await session.startTransaction()
         try{
-            const transaction = session.startTransaction()
             await User.bulkWrite([
+                {
+                    deleteOne:{filter:{email:"katrinakaif2@gmail.com"}}
+                },
+                {
+                    deleteOne:{filter:{email:"katrinakaif1@gmail.com"}}
+                },
                 {insertOne:{
                     document:{
                         password:"1234",
@@ -87,15 +93,21 @@ export class UserController{
                         role:"Actor",
                         gender:"Female",
                         name:"Katrina kaif",
-                        email:"katrinakaif1@gmail.com",
+                        email:"katrinakaif2@gmail.com",
                     }
                 }}
-            ])
-            await transaction.commitTransaction()
+            ],{ordered:true,session})
+            await session.commitTransaction()
+            // await session.endSession()
+            res.json({status:true,message:responseMessage.CREATED})
         }catch(err:any){
-            await transaction.abortTransaction()
+            await session.abortTransaction()
+            // await session.endSession()
             const message:string = errorHandler(err)
             res.json({status:false,message})
+        }
+        finally{
+            await session.endSession()
         }
     }
 }

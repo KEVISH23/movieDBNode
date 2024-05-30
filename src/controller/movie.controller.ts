@@ -1,11 +1,12 @@
 import { NextFunction, Request, Response} from "express";
-import { controller,request,response,httpPost,httpGet } from "inversify-express-utils";
+import { controller,request,response,httpPost,httpGet, httpPut, httpDelete } from "inversify-express-utils";
 import { MovieService } from "../service";
 import { responseMessage, TYPES } from "../constants";
 import { inject } from "inversify";
 import {  IBOC, IGETCOLLECTIONDATA, IMOVIES, REQUSER } from "../interfaces";
 import { compareRole, errorHandler } from "../utils";
 import puppeteer,{Browser} from "puppeteer";
+import { isValidObjectId } from "mongoose";
 
 // @controller('/movies',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
 //     compareRole(req.user,"Admin",res,next)
@@ -42,7 +43,7 @@ export class MovieController{
 
 
     @httpPost('/addMovies',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
-            compareRole(req.user,"Admin",res,next)
+            compareRole(req.user,["Admin","Producer"],res,next)
          })
     async addMovies(@request() req:REQUSER,@response() res:Response):Promise<void>{
         try {
@@ -56,7 +57,7 @@ export class MovieController{
     }
 
     @httpPost('/addCollection',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
-        compareRole(req.user,"Admin",res,next)
+        compareRole(req.user,["Admin"],res,next)
      })
      async addCollection(@request() req:REQUSER,@response() res:Response):Promise<void>{
         try {
@@ -176,6 +177,48 @@ export class MovieController{
         // res.send(pdfBuffer);
     }
 
-    
-    
+    @httpPut('/update/:id',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
+        compareRole(req.user,["Admin","Producer"],res,next)
+     })
+    async updateMovie(@request() req: REQUSER, @response() res: Response):Promise<void>{
+        try {
+            const {id} = req.params
+            if(!id){
+                throw new Error(responseMessage.IDNOTPROVIDED)
+            }
+            if(!isValidObjectId(id)){
+                throw new Error(responseMessage.IDNOTVALID)
+            }
+            const {movieName,cast,producer,director,budget,genre,releaseDate} = req.body
+            const data = {
+                ...{movieName,cast,producer,director,budget,genre,releaseDate},
+                _id:id
+            }
+            await this.movieService.updateMovieService(data)
+            res.json({status:true,message:"Movie updated"})
+        } catch (error:any) {
+            const message:string = errorHandler(error)
+            res.json({status:false,message})
+        }
+    }
+    @httpDelete('/delete/:id',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
+        compareRole(req.user,["Admin","Producer"],res,next)
+     })
+    async deleteMovie(@request() req: REQUSER, @response() res: Response):Promise<void>{
+        try {
+            const {id} = req.params
+            if(!id){
+                throw new Error(responseMessage.IDNOTPROVIDED)
+            }
+            if(!isValidObjectId(id)){
+                throw new Error(responseMessage.IDNOTVALID)
+            }
+            
+            await this.movieService.deleteMovieService(id.toString())
+            res.json({status:true,message:"Movie Deleted"})
+        } catch (error:any) {
+            const message:string = errorHandler(error)
+            res.json({status:false,message})
+        }
+    }
 }

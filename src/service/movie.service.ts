@@ -324,4 +324,34 @@ export class MovieService {
       throw error;
     }
   }
+
+  async updateMovieService(data:IMOVIES):Promise<void>{
+    try {
+      const {movieName,cast,producer,director,budget,genre,releaseDate} = data
+      if(!movieName && !cast && !producer && !director && !budget && !genre && !releaseDate){
+        throw new Error(responseMessage.MOVIEUPDATEFIELDS)
+      }
+      const isExist:IMOVIES|null = await Movie.findOne({_id:data._id})
+      if(!isExist){
+        throw new Error(responseMessage.MOVIENOTEXISTS)
+      }
+      await Movie.findByIdAndUpdate(data._id,data)
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async deleteMovieService(id:string):Promise<void>{
+    try {
+    
+      const isExist:IMOVIES|null = await Movie.findOne({_id:id})
+      if(!isExist){
+        throw new Error(responseMessage.MOVIENOTEXISTS)
+      }
+      await Movie.findByIdAndDelete(id)
+    } catch (error) {
+      throw error
+    }
+  }
+
 }
