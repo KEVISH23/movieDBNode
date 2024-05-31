@@ -119,15 +119,7 @@ export class MovieService {
 
   async addMovies(data: IMOVIES): Promise<void> {
     try {
-      if (!data.cast) {
-        throw new Error("Cast is required");
-      }
-      if (!data.producer) {
-        throw new Error("Producer is required");
-      }
-      if (!data.genre) {
-        throw new Error("Genre is required");
-      }
+      
       await Movie.create(data);
     } catch (error) {
       throw error;
