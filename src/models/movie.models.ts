@@ -6,24 +6,42 @@ const MovieSchema = new mongoose.Schema({
         required:[true,'Movie name is required'],
         trim:true
     },
-    cast:[{
+    cast:{
        
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"User"
+            type:[mongoose.Schema.Types.ObjectId],
+            ref:"User",
+            validate:{
+                validator: function (v:any) {
+                    return Array.isArray(v) && v.length > 0;
+                },
+                message: 'A movie must have at least one actor'
+            },
         
-    }],
-    producer:[{
+    },
+    producer:{
         
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"User"
+            type:[mongoose.Schema.Types.ObjectId],
+            ref:"User",
+            validate:{
+                validator: function (v:any) {
+                    return Array.isArray(v) && v.length > 0;
+                },
+                message: 'A movie must have at least one producer'
+            },
         
-    }],
-    genre:[{
+    },
+    genre:{
         
-            type:mongoose.Schema.Types.ObjectId,
-            ref:"Genre"
+            type:[mongoose.Schema.Types.ObjectId],
+            ref:"Genre",
+            validate:{
+                validator: function (v:any) {
+                    return Array.isArray(v) && v.length > 0;
+                },
+                message: 'A movie must have at least one genre'
+            },
         
-    }],
+    },
     director:{
         type:mongoose.Schema.Types.ObjectId,
         required:[true,'Director is required'],

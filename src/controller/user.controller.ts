@@ -67,7 +67,7 @@ export class UserController{
     @httpPost('/bulkwrite')
     async bulkwrite(@request() req:REQUSER,@response() res:Response):Promise<void>{
         const session = await mongoose.startSession()
-        await session.startTransaction()
+         session.startTransaction()
         try{
             await User.bulkWrite([
                 {

@@ -8,8 +8,12 @@ export const errorHandler = (err:any):string => {
     }
     if(err.name === 'ValidationError'){
         for (const key in err.errors) {
-            message += err.errors[key].message
-            message += ', '
+            if(err.errors[key].name === "CastError"){
+                message += `Id provided at ${err.errors[key].path} is not valid!!!`
+            }else{
+                message += err.errors[key].message
+                message += ', '
+            }
         }
         return message.slice(0,message.length -2)
     }

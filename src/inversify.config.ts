@@ -11,4 +11,5 @@ container.bind<AuthMiddleware>(TYPES.AuthMiddleware).to(AuthMiddleware)
 container.bind<MovieService>(TYPES.MovieService).to(MovieService)
 container.bind<GenreService>(TYPES.GenreService).to(GenreService)
 container.bind<ReviewService>(TYPES.ReviewService).to(ReviewService)
+
 export {container}
