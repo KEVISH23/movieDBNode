@@ -47,7 +47,11 @@ export class MovieController{
         try{
             const {id} = req.params
             const data:any = await this.movieService.getMovieById(id)
-            res.json({status:true,message:"Data received",data})
+            if(data.length>0){
+                res.json({status:true,message:"Data received",data})
+            }else{
+                throw new Error("not found")
+            }
 
         }catch(err:any){
             const message:string = errorHandler(err)
