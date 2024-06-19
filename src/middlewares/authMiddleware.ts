@@ -8,7 +8,8 @@ import { errorHandler } from "../utils";
 export class AuthMiddleware extends BaseMiddleware{
     handler(req: REQUSER, res: Response<any, Record<string, any>>, next: NextFunction): void {
         try{
-            const {token} = req.headers
+            // console.log(req.headers)
+            const token = req.headers.authorization?.split(' ')[1]
             if(!token){
                 throw new Error(responseMessage.TOKENNOTPROVIDED)
             }
@@ -23,6 +24,5 @@ export class AuthMiddleware extends BaseMiddleware{
             const message:string = errorHandler(err)
             res.json({status:false,message})
         }
-       
     }
 }

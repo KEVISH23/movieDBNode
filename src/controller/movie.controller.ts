@@ -24,23 +24,36 @@ export class MovieController{
     async getMovies(@request() req:REQUSER,@response() res:Response):Promise<void>{
         try{
             const {role,_id,email} = req.user
-            const {actorName,directorName,producerName,releaseDateRange,budgetRange,search,genre} = req.query
-            const data:IMOVIES[] = await this.movieService.getMovies({role,_id,email},{
+            const {actorName,directorName,producerName,releaseDateRange,budgetRange,search,genre,page,limit} = req.query
+            const data:any = await this.movieService.getMovies({role,_id,email},{
                 actorName:actorName?.toString(),
                 directorName:directorName?.toString(),
                 producerName:producerName?.toString(),
                 releaseDateRange:releaseDateRange?.toString(),
                 budgetRange:budgetRange?.toString(),
                 search:search?.toString(),
-                genre:genre?.toString()
+                genre:genre?.toString(),
+                page:page?page.toString():"1",
+                limit:limit?limit.toString():"5",
             })
-            res.json({status:true,data})
+            res.json({status:true,data:data.data,totalPages:data.totalPages})
         }catch(err){ 
             const message:string = errorHandler(err)
             res.json({status:false,message})
         }
     }
+    @httpGet('/getMovie/:id',TYPES.AuthMiddleware)
+    async getMovieById(@request() req:REQUSER,@response() res:Response){
+        try{
+            const {id} = req.params
+            const data:any = await this.movieService.getMovieById(id)
+            res.json({status:true,message:"Data received",data})
 
+        }catch(err:any){
+            const message:string = errorHandler(err)
+            res.json({status:false,message})
+        }
+    }
 
     @httpPost('/addMovies',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
             compareRole(req.user,["Admin","Producer"],res,next)

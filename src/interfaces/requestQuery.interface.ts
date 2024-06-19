@@ -6,7 +6,9 @@ export interface IGETMOVIES{
     releaseDateRange:string|undefined,
     budgetRange:string|undefined,
     search:string|undefined,
-    genre:string|undefined
+    genre:string|undefined,
+    page?:string|undefined,
+    limit?:string|undefined,
 }
 
 export interface IGETCOLLECTION extends IGETMOVIES{

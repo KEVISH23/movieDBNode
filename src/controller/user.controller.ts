@@ -44,8 +44,8 @@ export class UserController{
     async loginUser(@request() req:Request,@response() res:Response):Promise<void>{
         try{
             const {email,password} = req.body
-            await this.userService.loginService(email,password)
-            res.json({status:true,message:responseMessage.LOGGEDIN})
+            const user = await this.userService.loginService(email,password)
+            res.json({status:true,message:responseMessage.LOGGEDIN,user})
         }catch(err:any){
             const message:string = errorHandler(err)
             res.json({status:false,message})

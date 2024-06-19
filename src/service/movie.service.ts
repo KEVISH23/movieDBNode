@@ -22,7 +22,7 @@ import mongoose, { PipelineStage } from "mongoose";
 import puppeteer from "puppeteer";
 @injectable()
 export class MovieService {
-  async getMovies(reqUser: DECODED, reqQuery: IGETMOVIES): Promise<IMOVIES[]> {
+  async getMovies(reqUser: DECODED, reqQuery: IGETMOVIES): Promise<any> {
     try {
       const {
         actorName,
@@ -32,7 +32,39 @@ export class MovieService {
         budgetRange,
         search,
         genre,
+        page,
+        limit
       } = reqQuery;
+      const getTotalPagesPipeline: PipelineStage[] = []
+      if (reqUser.role === "Admin") {
+        getTotalPagesPipeline.push({
+          $group: {
+            _id: null,
+            count: { $count: {} }
+          }
+        })
+      } else {
+        getTotalPagesPipeline.push(
+          {
+            $match: {
+              cast: new mongoose.Types.ObjectId(reqUser._id)
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              count: { $count: {} }
+            }
+          })
+      }
+      let page2 = Number(page)
+      const totalMovies: any = await Movie.aggregate(getTotalPagesPipeline)
+      // console.log(totalMovies)
+      let totalPages = Math.ceil(totalMovies[0].count / Number(limit))
+      if(Number(page)>totalPages){
+        page2 = totalPages
+      }
+      // console.log(totalPages)
       let query = {
         $match: {},
       };
@@ -50,25 +82,25 @@ export class MovieService {
         ...(releaseDateRangeArr
           ? releaseDateRangeArr.length === 2
             ? [
-                {
-                  releaseDate: {
-                    $gte: new Date(releaseDateRangeArr[0]),
-                    $lte: new Date(releaseDateRangeArr[1]),
-                  },
+              {
+                releaseDate: {
+                  $gte: new Date(releaseDateRangeArr[0]),
+                  $lte: new Date(releaseDateRangeArr[1]),
                 },
-              ]
+              },
+            ]
             : [{ releaseDate: { $gte: releaseDateRangeArr[0] } }]
           : []),
         ...(budgetRangeArr
           ? budgetRangeArr.length === 2
             ? [
-                {
-                  budget: {
-                    $gte: Number(budgetRangeArr[0]),
-                    $lte: Number(budgetRangeArr[1]),
-                  },
+              {
+                budget: {
+                  $gte: Number(budgetRangeArr[0]),
+                  $lte: Number(budgetRangeArr[1]),
                 },
-              ]
+              },
+            ]
             : [{ budget: { $gte: budgetRangeArr[0] } }]
           : []),
       ];
@@ -78,10 +110,10 @@ export class MovieService {
 
       search
         ? (query.$match = getOrQuery(
-            ["actorName", "producerName", "directorName", "movieName", "genre"],
-            query,
-            search
-          ))
+          ["actorName", "producerName", "directorName", "movieName", "genre"],
+          query,
+          search
+        ))
         : null;
 
       const pipeline: PipelineStage[] = [
@@ -91,11 +123,18 @@ export class MovieService {
           },
         },
         ...getMoviesPipeline,
-        {
-          $match: {
-            ...query.$match,
-          },
+
+      ];
+      limit && pipeline.push({
+        $skip: ((Number(page2) - 1) * Number(limit))
+      }, {
+        $limit: Number(limit)
+      })
+      pipeline.push({
+        $match: {
+          ...query.$match,
         },
+      },
         {
           $project: {
             directorName: 1,
@@ -107,19 +146,44 @@ export class MovieService {
             budget: 1,
             genre: 1,
           },
-        },
-      ];
+        },)
       //   console.log(query)
       //   return pipeline
-      return await Movie.aggregate(pipeline);
+      const data = await Movie.aggregate(pipeline)
+      return { data, totalPages };
     } catch (error) {
       throw error;
     }
   }
 
+  async getMovieById(id:string):Promise<any>{
+    let pipeline:PipelineStage[]=[...getMoviesPipeline]
+    pipeline.unshift({
+      $match:{
+        _id:new mongoose.Types.ObjectId(id)
+      }
+    })
+    pipeline = [
+      ...pipeline,
+      {
+        $project: {
+          directorName: 1,
+          actorName: 1,
+          producerName: 1,
+          movieName: 1,
+          releaseDate: 1,
+          _id: 1,
+          budget: 1,
+          genre: 1,
+        },
+      }
+    ]
+    return await Movie.aggregate(pipeline)
+  }
+
   async addMovies(data: IMOVIES): Promise<void> {
     try {
-      
+
       await Movie.create(data);
     } catch (error) {
       throw error;
@@ -170,37 +234,37 @@ export class MovieService {
         ...(releaseDateRangeArr
           ? releaseDateRangeArr.length === 2
             ? [
-                {
-                  releaseDate: {
-                    $gte: new Date(releaseDateRangeArr[0]),
-                    $lte: new Date(releaseDateRangeArr[1]),
-                  },
+              {
+                releaseDate: {
+                  $gte: new Date(releaseDateRangeArr[0]),
+                  $lte: new Date(releaseDateRangeArr[1]),
                 },
-              ]
+              },
+            ]
             : [{ releaseDate: { $gte: new Date(releaseDateRangeArr[0]) } }]
           : []),
         ...(budgetRangeArr
           ? budgetRangeArr.length === 2
             ? [
-                {
-                  budget: {
-                    $gte: Number(budgetRangeArr[0]),
-                    $lte: Number(budgetRangeArr[1]),
-                  },
+              {
+                budget: {
+                  $gte: Number(budgetRangeArr[0]),
+                  $lte: Number(budgetRangeArr[1]),
                 },
-              ]
+              },
+            ]
             : [{ budget: { $gte: Number(budgetRangeArr[0]) } }]
           : []),
         ...(collectionRangeArr
           ? collectionRangeArr.length === 2
             ? [
-                {
-                  boxOfficecollection: {
-                    $gte: Number(collectionRangeArr[0]),
-                    $lte: Number(collectionRangeArr[1]),
-                  },
+              {
+                boxOfficecollection: {
+                  $gte: Number(collectionRangeArr[0]),
+                  $lte: Number(collectionRangeArr[1]),
                 },
-              ]
+              },
+            ]
             : [{ boxOfficecollection: { $gte: Number(collectionRangeArr[0]) } }]
           : []),
       ];
@@ -210,10 +274,10 @@ export class MovieService {
 
       search
         ? (query.$match = getOrQuery(
-            ["actorName", "producerName", "directorName", "movieName", "genre"],
-            query,
-            search
-          ))
+          ["actorName", "producerName", "directorName", "movieName", "genre"],
+          query,
+          search
+        ))
         : null;
 
       const pipeline: PipelineStage[] = [
@@ -274,15 +338,14 @@ export class MovieService {
 
       data.forEach(
         (ele) =>
-          (htmlString += `<tr>
+        (htmlString += `<tr>
                     <td style="border:2px solid black">${ele.movieName}</td>
                     <td style="border:2px solid black">${ele.actorName.join()}</td>
                     <td style="border:2px solid black">${ele.directorName.join()}</td>
                     <td style="border:2px solid black">${ele.producerName.join()}</td>
                     <td style="border:2px solid black">${ele.budget}</td>
-                    <td style="border:2px solid black">${
-                      ele.boxOfficecollection
-                    }</td>
+                    <td style="border:2px solid black">${ele.boxOfficecollection
+          }</td>
                     <td style="border:2px solid black">${ele.verdict}</td>
                   </tr>
                   `)
@@ -317,27 +380,27 @@ export class MovieService {
     }
   }
 
-  async updateMovieService(data:IMOVIES):Promise<void>{
+  async updateMovieService(data: IMOVIES): Promise<void> {
     try {
-      const {movieName,cast,producer,director,budget,genre,releaseDate} = data
-      if(!movieName && !cast && !producer && !director && !budget && !genre && !releaseDate){
+      const { movieName, cast, producer, director, budget, genre, releaseDate } = data
+      if (!movieName && !cast && !producer && !director && !budget && !genre && !releaseDate) {
         throw new Error(responseMessage.MOVIEUPDATEFIELDS)
       }
-      const isExist:IMOVIES|null = await Movie.findOne({_id:data._id})
-      if(!isExist){
+      const isExist: IMOVIES | null = await Movie.findOne({ _id: data._id })
+      if (!isExist) {
         throw new Error(responseMessage.MOVIENOTEXISTS)
       }
-      await Movie.findByIdAndUpdate(data._id,data)
+      await Movie.findByIdAndUpdate(data._id, data)
     } catch (error) {
       throw error
     }
   }
 
-  async deleteMovieService(id:string):Promise<void>{
+  async deleteMovieService(id: string): Promise<void> {
     try {
-    
-      const isExist:IMOVIES|null = await Movie.findOne({_id:id})
-      if(!isExist){
+
+      const isExist: IMOVIES | null = await Movie.findOne({ _id: id })
+      if (!isExist) {
         throw new Error(responseMessage.MOVIENOTEXISTS)
       }
       await Movie.findByIdAndDelete(id)

@@ -22,7 +22,7 @@ export class UserService{
         }
     }
 
-    async loginService(email:string,password:string):Promise<void>{
+    async loginService(email:string,password:string):Promise<IUSER|null>{
         try {
             const user:IUSER|null = await User.findOne({email})
             if(!user){
@@ -40,6 +40,8 @@ export class UserService{
             await User.findOneAndUpdate({email},{
                 $set:{token}
             })
+            const user1:IUSER|null = await User.findOne({email})
+            return user1
 
         } catch (error:any) {
             throw(error)
