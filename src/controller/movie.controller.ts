@@ -33,8 +33,8 @@ export class MovieController{
                 budgetRange:budgetRange?.toString(),
                 search:search?.toString(),
                 genre:genre?.toString(),
-                page:page?page.toString():"1",
-                limit:limit?limit.toString():"5",
+                page:page?.toString(),
+                limit:limit?.toString()
             })
             res.json({status:true,data:data.data,totalPages:data.totalPages})
         }catch(err){ 
