@@ -57,4 +57,25 @@ export class UserService{
             throw(error)
         }
     }
+    async getDirectorService():Promise<any>{
+        try{
+            return await User.find({role:"Director"},{_id:1,name:1})
+        }catch(err:any){
+            throw (err)
+        }
+    }
+    async getProducerService():Promise<any>{
+        try{
+            return await User.find({role:"Producer"},{_id:1,name:1})
+        }catch(err:any){
+            throw (err)
+        }
+    }
+    async getActorService():Promise<any>{
+        try{
+            return await User.find({role:"Actor"},{_id:1,name:1})
+        }catch(err:any){
+            throw (err)
+        }
+    }
 }

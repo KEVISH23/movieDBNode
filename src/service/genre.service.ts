@@ -10,4 +10,11 @@ export class GenreService{
             throw(error)
         }
     }
+    async getGenreService():Promise<any>{
+        try {
+            return await Genre.find({},{id:1,genreName:1})
+        } catch (error) {
+            throw(error)
+        }
+    }
 }

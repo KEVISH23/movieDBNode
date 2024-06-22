@@ -1,10 +1,10 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { controller,request,response,httpPost,httpGet } from "inversify-express-utils";
 import { UserService } from "../service";
 import { responseMessage, TYPES } from "../constants";
 import { inject } from "inversify";
 import { IUSER, REQUSER } from "../interfaces";
-import { errorHandler } from "../utils";
+import { compareRole, errorHandler } from "../utils";
 import { User } from "../models";
 import { MongoClient } from "mongodb";
 import mongoose from "mongoose";
@@ -108,6 +108,43 @@ export class UserController{
         }
         finally{
             await session.endSession()
+        }
+    }
+
+    @httpGet('/getDirectors',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
+        compareRole(req.user,["Admin","Producer"],res,next)
+     })
+    async getDirectors(@request() req:REQUSER,@response() res:Response):Promise<void>{
+        try{
+            const data:any = await this.userService.getDirectorService()
+            res.json({status:true,data})
+        }catch(err){
+            const message:string = errorHandler(err)
+            res.json({status:false,message})
+        }
+    }
+    @httpGet('/getProducers',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
+        compareRole(req.user,["Admin","Producer"],res,next)
+     })
+    async getProducers(@request() req:REQUSER,@response() res:Response):Promise<void>{
+        try{
+            const data:any = await this.userService.getProducerService()
+            res.json({status:true,data})
+        }catch(err){
+            const message:string = errorHandler(err)
+            res.json({status:false,message})
+        }
+    }
+    @httpGet('/getActors',TYPES.AuthMiddleware,(req:REQUSER, res:Response ,next:NextFunction)=>{
+        compareRole(req.user,["Admin","Producer"],res,next)
+     })
+    async getActors(@request() req:REQUSER,@response() res:Response):Promise<void>{
+        try{
+            const data:any = await this.userService.getActorService()
+            res.json({status:true,data})
+        }catch(err){
+            const message:string = errorHandler(err)
+            res.json({status:false,message})
         }
     }
 }

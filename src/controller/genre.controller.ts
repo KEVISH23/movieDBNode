@@ -31,4 +31,15 @@ export class GenreController{
         }
         
     }
+    @httpGet('/')
+    async getGenre(@request() req:REQUSER,@response() res:Response):Promise<void>{
+        try {
+            const data:any = await this.genreService.getGenreService()
+            res.json({status:true,data})
+        } catch (error) {
+            const message:string = errorHandler(error)
+            res.json({status:false,message})
+        }
+        
+    }
 }

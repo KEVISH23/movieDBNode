@@ -35,6 +35,7 @@ export class MovieService {
         page,
         limit
       } = reqQuery;
+      const roleWiseMatch = roleBased(reqUser);
       const getTotalPagesPipeline: PipelineStage[] = []
       if (reqUser.role === "Admin") {
         getTotalPagesPipeline.push({
@@ -47,8 +48,8 @@ export class MovieService {
         getTotalPagesPipeline.push(
           {
             $match: {
-              cast: new mongoose.Types.ObjectId(reqUser._id)
-            }
+              ...roleWiseMatch,
+            },
           },
           {
             $group: {
@@ -68,7 +69,7 @@ export class MovieService {
       let query = {
         $match: {},
       };
-      const roleWiseMatch = roleBased(reqUser);
+      
 
       const releaseDateRangeArr: string[] | undefined =
         releaseDateRange?.split("/");
