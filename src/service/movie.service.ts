@@ -58,10 +58,13 @@ export class MovieService {
             }
           })
       }
+      // console.log(getTotalPagesPipeline)
       let page2 = Number(page)
       const totalMovies: any = await Movie.aggregate(getTotalPagesPipeline)
       // console.log(totalMovies)
-      let totalPages = Math.ceil(totalMovies[0].count / Number(limit))
+      // let totalPages = Math.ceil(totalMovies[0].count / Number(limit))
+      let totalPages = totalMovies[0].count
+      // console.log(totalPages)
       if(Number(page)>totalPages){
         page2 = totalPages
       }
@@ -151,7 +154,7 @@ export class MovieService {
       //   console.log(query)
       //   return pipeline
       const data = await Movie.aggregate(pipeline)
-      return { data, totalPages };
+      return { data, metadata:{totalPages,limit:Number(limit)} };
     } catch (error) {
       throw error;
     }
